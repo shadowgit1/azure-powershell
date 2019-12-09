@@ -55,7 +55,38 @@ At line:1 char:1
    let
 ```
 
-### Potential Reason 1: Older Version Stored in User or Global Scope
+### Potential Reason 1: Execution scripts are disabled in powershell
+
+There is another quite common error which anyone who is trying to load for the first time won't do. Set-Executionpolicy 0 needs to be run before as if you do try to import-module az.accounts, running scripts disabled on system.
+
+PS C:\WINDOWS\system32> connect-azaccount
+connect-azaccount : The 'connect-azaccount' command was found in the module 'Az.Accounts', but the module could not be
+loaded. For more information, run 'Import-Module Az.Accounts'.
+At line:1 char:1
++ connect-azaccount
++ ~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (connect-azaccount:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CouldNotAutoloadMatchingModule
+
+PS C:\WINDOWS\system32> import-module az.accounts
+import-module : File C:\Program Files\WindowsPowerShell\Modules\az.accounts\1.6.4\Az.Accounts.psm1 cannot be loaded
+because running scripts is disabled on this system. For more information, see about_Execution_Policies at
+https:/go.microsoft.com/fwlink/?LinkID=135170.
+At line:1 char:1
++ import-module az.accounts
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : SecurityError: (:) [Import-Module], PSSecurityException
+    + FullyQualifiedErrorId : UnauthorizedAccess,Microsoft.PowerShell.Commands.ImportModuleCommand
+PS C:\WINDOWS\system32> set-executionpolicy 0
+
+Execution Policy Change
+The execution policy helps protect you from scripts that you do not trust. Changing the execution policy might expose
+you to the security risks described in the about_Execution_Policies help topic at
+https:/go.microsoft.com/fwlink/?LinkID=135170. Do you want to change the execution policy?
+[Y] Yes  [A] Yes to All  [N] No  [L] No to All  [S] Suspend  [?] Help (default is "N"): a
+PS C:\WINDOWS\system32> connect-azaccount
+
+### Potential Reason 2: Older Version Stored in User or Global Scope
 
 PowerShell allows installing multiple versions of modules. Normally, PowerShell will load the latest version of a module unless specifically instructed to load a specific version by using `Import-Module -RequiredVersion <version>`. However, if modules are installed in multiple directories of the `PSModulePath`, then the results can be unexpected. When PowerShell searches for a module in the module path, it will return the latest version stored in the earliest path component where the module appears, even if a later version of the module is installed in a subsequent directory in the PSModulePath.
 
@@ -87,7 +118,7 @@ In this case, the earlier version of Az.Accounts (0.7.0) will *always* be loaded
 
 To resolve this problem, simply remove all versions of Azure PowerShell cmdlets not in the global scope `%ProgramFiles%\PowerShell\Modules`.  You can remove modules by physically removing the module directory (for example `C:\Users\<myuser>\Documents\PowerShell\Modules\Az.Accounts`).
 
-### Potential Reason 2: Azure/AzureRM installed side-by-side with Az
+### Potential Reason 3: Azure/AzureRM installed side-by-side with Az
 
 Azure and AzureRM, our prior Azure PowerShell modules, cannot load **in the same PowerShell session** as the Az modules. Here an example of what you might see when you run `Get-Module` if both AzureRM and Az are in the same PowerShell session:
 
